@@ -1,0 +1,135 @@
+rom inclusion
+bodies: rational design and recipes.Appl. Microbiol. Biotechnol.92, 241–251. doi:
+10.1007/s00253-011-3513-y
+Bentley, W . E., Mirjalili, N., Andersen, D. C., Davis, R. H., and Kompala, D. S.
+(1990). Plasmid-encoded protein: the principal factor in the “metabolic bur-
+den” associated with recombinant bacteria.Biotechnol. Bioeng. 35, 668–681. doi:
+10.1002/bit.260350704
+Bessette, P . H., Aslund, F ., Beckwith, J., and Georgiou, G. (1999). Efﬁcient
+folding of proteins with multiple disulﬁde bonds in the Escherichia coli cyto-
+plasm. Proc. Natl. Acad. Sci. U.S.A. 96, 13703–13708. doi: 10.1073/pnas.96.24.
+13703
+Bird, L. E. (2011). High throughput construction and small scale expression
+screening of multi-tag vectors in Escherichia coli . Methods 55, 29–37. doi:
+10.1016/j.ymeth.2011.08.002
+Birnbaum, S., and Bailey, J. E. (1991). Plasmid presence changes the relative levels
+of many host cell proteins and ribosome components in recombinantEscherichia
+coli. Biotechnol. Bioeng. 37, 736–745. doi: 10.1002/bit.260370808
+Blommel, P . G., Becker, K. J., Duvnjak, P ., and Fox, B. G. (2007). Enhanced bac-
+terial protein expression during auto-induction obtained by alteration of lac
+repressor dosage and medium composition.Biotechnol. Prog. 23, 585–598. doi:
+10.1021/bp070011x
+Blommel, P . G., and Fox, B. G. (2007). A combined approach to improving large-
+scale production of tobacco etch virus protease.Protein Expr. Purif. 55, 53–68.
+doi: 10.1016/j.pep.2007.04.013
+Bolivar, F ., Rodriguez, R. L., Greene, P . J., Betlach, M. C., Heyneker, H. L., Boyer,
+H. W ., et al. (1977). Construction and characterization of new cloning vehicles.
+II. A multipurpose cloning system.Gene 2, 95–113. doi: 10.1016/0378-1119(77)
+90000-2
+Bornhorst, J. A., and Falke, J. J. (2000). Puriﬁcation of proteins using poly-
+histidine afﬁnity tags. Methods Enzymol. 326, 245–254. doi: 10.1016/S0076-
+6879(00)26058-8
+Braun, P ., and LaBaer, J. (2003). High throughput protein production for func-
+tional proteomics. T rends Biotechnol.21, 383–388. doi: 10.1016/S0167-7799(03)
+00189-6
+Buchan, J. R., and Stansﬁeld, I. (2007). Halting a cellular production line:
+responses to ribosomal pausing during translation. Biol. Cell 99, 475–487. doi:
+10.1042/BC20070037
+Bucher, M. H., Evdokimov, A. G., and W augh, D. S. (2002). Differential effects
+of short afﬁnity tags on the crystallization of Pyrococcus furiosus maltodextrin-
+binding protein. Acta Crystallogr. D. Biol. Crystallogr. 58, 392–397. doi:
+10.1107/S0907444901021187
+Burgess, R. R. (2009). Refolding solubilized inclusion body proteins. Methods
+Enzymol. 463, 259–282. doi: 10.1016/S0076-6879(09)63017-2
+Burgess-Brown, N. A., Sharma, S., Sobott, F ., Loenarz, C., Oppermann, U., and
+Gileadi, O. (2008). Codon optimization can improve expression of human genes
+in Escherichia coli : a multi-gene study. Protein Expr. Purif. 59, 94–102. doi:
+10.1016/j.pep.2008.01.008
+Busso, D., Stierle, M., Thierry, J. C., and Moras, D. (2008). A comparison of inocula-
+tion methods to simplify recombinant protein expression screening inEscherichia
+coli. Biotechniques 44, 101–106. doi: 10.2144/000112632
+Butt, T . R., Edavettal, S. C., Hall, J. P ., and Mattern, M. R. (2005). SUMO fusion
+technology for difﬁcult-to-express proteins. Protein Expr. Purif. 43, 1–9. doi:
+10.1016/j.pep.2005.03.016
+Calos, M. P . (1978). DNA sequence for a low-level promoter of the lac repressor gene
+and an ‘up’ promoter mutation.Nature
+274, 762–765. doi: 10.1038/274762a0
+Campbell, J. L., Richardson, C. C., and Studier, F . W . (1978). Genetic recombination
+and complementation between bacteriophage T7 and cloned fragments of T7
+DNA. Proc. Natl. Acad. Sci. U.S.A.75, 2276–2280. doi: 10.1073/pnas.75.5.2276
+Camps, M. (2010). Modulation of ColE1-like plasmid replication for recom-
+binant gene expression. Recent Pat. DNA Gene Seq. 4, 58–73. doi:
+10.2174/187221510790410822
+Carrio, M. M., and Villaverde, A. (2001). Protein aggregation as bacterial inclusion
+bodies is reversible.FEBS Lett. 489, 29–33. doi: 10.1016/S0014-5793(01)02073-7
+Carrio, M. M., and Villaverde, A. (2002). Construction and deconstruction of bacte-
+rial inclusion bodies.J. Biotechnol.96, 3–12. doi: 10.1016/S0168-1656(02)00032-9
+Carson, M., Johnson, D. H., Mcdonald, H., Brouillette, C., and Delucas, L. J. (2007).
+His-tag impact on structure. Acta Crystallogr. D. Biol. Crystallogr. 63, 295–301.
+doi: 10.1107/S0907444906052024
+Caspers, P ., Stieger, M., and Burn, P . (1994). Overproduction of bacterial chaperones
+improves the solubility of recombinant protein tyrosine kinases inEscherichia coli.
+Cell. Mol. Biol. (Noisy-le-grand)40, 635–644.
+Chang, A. C., and Cohen, S. N. (1978). Construction and characterization of ampliﬁ-
+able multicopy DNA cloning vehicles derived from the P15A cryptic miniplasmid.
+J. Bacteriol. 134, 1141–1156.
+Chant, A., Kraemer-Pecore, C. M., W atkin, R., and Kneale, G. G. (2005). Attachment
+of a histidine tag to the minimal zinc ﬁnger protein of theAspergillus nidulans
+gene regulatory protein AreA causes a conformational change at the DNA-binding
+site. Protein Expr. Purif.39, 152–159. doi: 10.1016/j.pep.2004.10.017
+Choi, J. H., Keum, K. C., and Lee, S. Y . (2006). Production of recombinant pro-
+teins by high cell density culture ofEscherichia coli. Chem. Eng. Sci. 61, 9. doi:
+10.1016/j.ces.2005.03.031
+Choi, J. H., and Lee, S. Y . (2004). Secretory and extracellular production of recom-
+binant proteins using Escherichia coli. Appl. Microbiol. Biotechnol. 64, 625–635.
+doi: 10.1007/s00253-004-1559-9
+Chu, D., Kazana, E., Bellanger, N., Singh, T ., T uite, M. F ., and V on Der Haar, T .
+(2014). T ranslation elongation can control translation initiation on eukaryotic
+mRNAs. EMBO J. 33, 21–34. doi: 10.1002/embj.201385651
+Clark, E. D. B. (1998). Refolding of recombinant proteins.Curr. Opin. Biotechnol9,
+157–163. doi: 10.1016/S0958-1669(98)80109-2
+Corchero, J. L., and Villaverde, A. (1998). Plasmid maintenance in Escherichia
+coli recombinant cultures is dramatically, s teadily, and speciﬁcally inﬂuenced
+by features of the encoded proteins. Biotechnol. Bioeng. 58, 625–632. doi:
+10.1002/(SICI)1097-0290(19980620)58:6<625::AID-BIT8>3.0.CO;2-K
+Costa, S. J., Almeida, A., Castro, A., Domingues, L., and Besir, H. (2013). The
+novel Fh8 and H fusion partners for soluble protein expression in Escherichia
+coli: a comparison with the traditional gene fusion technology.Appl. Microbiol.
+Biotechnol. 97, 6779–6791. doi: 10.1007/s00253-012-4559-1
+Cui, F . J., Li, Y ., Xu, Z. H., Xu, H. Y ., Sun, K., and T ao, W . Y . (2006). Optimization of
+the medium composition for production of mycelial biomass and exo-polymer by
+Grifola frondosaGF9801 using response surface methodology.Bioresour. T echnol.
+97, 1209–1216. doi: 10.1016/j.biortech.2005.05.005
+Daegelen, P ., Studier, F . W ., Lenski, R. E., Cure, S., and Kim, J. F . (2009). T racing
+ancestors and relatives ofEscherichia coliB, and the derivation of B strains REL606
+and BL21(DE3). J. Mol. Biol.394, 634–643. doi: 10.1016/j.jmb.2009.09.022
+Davis, G. D., Elisee, C., Newham, D. M., and Harrison, R. G. (1999). New fusion
+protein systems designed to give soluble expression inEscherichia coli. Biotechnol.
+Bioeng. 65, 382–388. doi: 10.1002/(SICI)1097-0290(19991120)65:4<382::AID-
+BIT2>3.0.CO;2-I
+de Boer, H. A., Comstock, L. J., and V asser, M. (1983). The tac promoter: a functional
+hybrid derived from the trp and lac promoters.Proc. Natl. Acad. Sci. U.S.A.
+80,
+21–25. doi: 10.1073/pnas.80.1.21
+del Solar, G., and Espinosa, M. (2000). Plasmid copy number control:
+an ever-growing story. Mol. Microbiol. 37, 492–500. doi: 10.1046/j.1365-
+2958.2000.02005.x
+del Solar, G., Giraldo, R., Ruiz-Echevarria, M. J., Espinosa, M., and Diaz-Orejas,
+R. (1998). Replication and control of circular bacterial plasmids.Microbiol. Mol.
+Biol. Rev.62, 434–464.
+Demain, A. L., and V aishnav, P . (2009). Production of recombinant pro-
+teins by microbes and higher organisms. Biotechnol. Adv. 27, 297–306. doi:
+10.1016/j.biotechadv.2009.01.008
+de Marco, A. (2009). Strategies for successful recombinant expression of disul-
+ﬁde bond-dependent proteins in Escherichia coli. Microb. Cell Fact. 8, 26. doi:
+10.1186/1475-2859-8-26
+de Marco, A., and De Marco, V . (2004). Bacteria co-transformed with recombi-
+nant proteins and chaperones cloned in independent plasmids are suitable for
+expression tuning. J. Biotechnol. 109, 45–52. doi: 10.1016/j.jbiotec.2003.10.025
+de Marco, A., Deuerling, E., Mogk, A., T omoyasu, T ., and Bukau, B. (2007).
+Chaperone-based procedure to increase yields of soluble recombinant proteins
+produced in E. coli. BMC Biotechnol.7:32. doi: 10.1186/1472-6750-7-32
+de Marco, A., Vigh, L., Diamant, S., and Goloubinoff, P . (2005). Native folding
+of aggregation-prone recombinant proteins in Escherichia coli by osmolytes,
+plasmid- or benzyl alcohol-overexpressed molecular chaperones. Cell Stress
+Chaperones 10, 329–339. doi: 10.1379/CSC-139R.1

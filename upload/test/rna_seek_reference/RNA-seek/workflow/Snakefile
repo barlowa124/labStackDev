@@ -1,0 +1,247 @@
+# Python standard library
+from os.path import join
+from os import listdir
+import os, sys, json, re
+
+# 3rd party imports from pypi
+from snakemake.workflow import workflow as wf_api
+
+# Local imports
+from scripts.common import (
+    allocated,
+    provided, 
+    references,
+    str_bool
+)
+
+# Global workflow variables
+configfile: 'config.json'                        # rna-seek config file
+samples  = config['project']['groups']['rsamps'] # sample basenames
+pfamily  = config['project']['pfamily']          # rnaseq
+workpath = config['project']['workpath']         # Parent Output directory
+tmpdir   = config['options']['tmp_dir']          # Temporary directory
+# Call gene fusions with arriba
+call_gene_fusions = str_bool(                    # Default: False, must
+    config['options']['call_gene_fusions']       # also have arriba refs
+)
+# Differential expression options
+batch_id = config['options'].get('batch_id','')   # Batch ID
+grps_file = config['options'].get('groups','')    # Groups file
+grps_file = grps_file if grps_file else ''
+cmps_file = config['options'].get('contrasts','') # Contrasts file
+cmps_file = cmps_file if cmps_file else ''
+# Optional covariates for correction
+covariates = ','.join(config['options'].get('covariates','')).strip()
+# Check for at least one comparison
+# and at least two groups to perform
+# differential expression analysis
+run_de = (len(config['project'].get('contrast', [])) > 0) and \
+(len(config['project'].get('group2samples', {})) > 1)
+case_groups = []
+ctrl_groups = []
+if run_de:
+    for case,control in config['project'].get('contrast', []):
+        # Replace any instances of 
+        # (A+B+C)/n with avg(A+B+C),
+        # avoids creatiing files with
+        # a "/" char in its name as
+        # that is a reserved char to
+        # seperate paths on posix systems.
+        case_groups.append(re.sub(r"\(([^()]+)\)\s*/\s*\d+", r"avg(\1)", case))
+        ctrl_groups.append(re.sub(r"\(([^()]+)\)\s*/\s*\d+", r"avg(\1)", control))
+
+# Read in resource information,
+# containing information about 
+# threads, mem, walltimes, etc.
+# TODO: Add handler for when the
+# mode is set to local.
+with open(join('resources', 'cluster.json')) as fh:
+    cluster = json.load(fh)
+
+# Check for SE or PE FastQ files:
+convert = {1: False, 2: True}                     # 1 = SE, 2 = PE, -1 = Unknown
+try:
+    paired_end = convert[config['project']['nends']]  # True if PE else false
+except KeyError:
+    # Catching case when value is -1 or unknown
+    sys.exit("Fatal: Raw data could not be classified as single-end or paired-end data!")
+
+# Child output directory aliases
+trim_dir='trim'
+star_dir='STAR_files'
+bams_dir='bams'
+log_dir='logfiles'
+rseqc_dir='RSeQC'
+kraken_dir='kraken'
+preseq_dir='preseq'
+degall_dir='Counts'
+dtypes=['RSEM_genes']
+
+
+if paired_end:
+    # Paired-end Target files
+    rule all:
+        params:
+            batch='--time=168:00:00',
+        input:
+            # FastQValidator
+            expand(join(workpath,"rawQC","{name}.validated.R1.fastq.log"), name=provided(samples, wf_api.use_singularity)),
+            expand(join(workpath,"rawQC","{name}.validated.R2.fastq.log"), name=provided(samples, wf_api.use_singularity)),
+
+            # Flowcell Lane information
+            expand(join(workpath,"rawQC","{name}.fastq.info.txt"),name=samples),
+
+            # FastQC (before and after trimming)
+            expand(join(workpath,"rawQC","{name}.R1_fastqc.zip"), name=samples),
+            expand(join(workpath,"rawQC","{name}.R2_fastqc.zip"), name=samples),
+            expand(join(workpath,"QC","{name}.R1.trim_fastqc.zip"), name=samples),
+            expand(join(workpath,"QC","{name}.R2.trim_fastqc.zip"), name=samples),
+
+            # BBtools Insert Size
+            expand(join(workpath,"QC","{name}_insert_sizes.txt"), name=samples),
+
+            # FastScreen (Using two sets of reference databases)
+            expand(join(workpath,"FQscreen","{name}.R1.trim_screen.txt"),name=samples),
+            expand(join(workpath,"FQscreen","{name}.R1.trim_screen.png"),name=samples),
+            expand(join(workpath,"FQscreen","{name}.R2.trim_screen.txt"),name=samples),
+            expand(join(workpath,"FQscreen","{name}.R2.trim_screen.png"),name=samples),
+            expand(join(workpath,"FQscreen2","{name}.R1.trim_screen.txt"),name=samples),
+            expand(join(workpath,"FQscreen2","{name}.R1.trim_screen.png"),name=samples),
+            expand(join(workpath,"FQscreen2","{name}.R2.trim_screen.txt"),name=samples),
+            expand(join(workpath,"FQscreen2","{name}.R2.trim_screen.png"),name=samples),
+
+            # Kraken + Krona
+            expand(join(workpath,kraken_dir,"{name}.trim.kraken_bacteria.taxa.txt"),name=samples),
+            expand(join(workpath,kraken_dir,"{name}.trim.kraken_bacteria.krona.html"),name=samples),
+
+            # STAR
+            expand(join(workpath,bams_dir,"{name}.p2.Aligned.toTranscriptome.out.bam"),name=samples),
+
+            # Arriba
+            expand(join(workpath,"fusions","{name}_fusions.tsv"),name=provided(samples, references(config, pfamily, ['FUSIONBLACKLIST', 'FUSIONCYTOBAND', 'FUSIONPROTDOMAIN']) and call_gene_fusions)),
+            expand(join(workpath,"fusions","{name}_fusions.arriba.pdf"),name=provided(samples, references(config, pfamily, ['FUSIONBLACKLIST', 'FUSIONCYTOBAND', 'FUSIONPROTDOMAIN']) and call_gene_fusions)),
+
+            # Bam to stranded bigwigs
+            expand(join(workpath,bams_dir,"{name}.star_rg_added.sorted.dmark.bam"),name=samples),
+            expand(join(workpath,bams_dir,"{name}.fwd.bw"),name=samples),
+            expand(join(workpath,bams_dir,"{name}.rev.bw"),name=samples),
+
+            # Picard
+            expand(join(workpath,log_dir,"{name}.RnaSeqMetrics.txt"),name=samples),
+            expand(join(workpath,log_dir,"{name}.star.duplic"),name=samples),
+
+            # Preseq
+            expand(join(workpath,preseq_dir,"{name}.ccurve"),name=samples),
+
+            # QualiMap (bamQC and counts)
+            expand(join(workpath,"QualiMap","{name}","qualimapReport.html"),name=samples),
+
+            # RSeQC
+            expand(join(workpath,rseqc_dir,"{name}.strand.info"),name=samples),
+            expand(join(workpath,rseqc_dir,"{name}.Rdist.info"),name=samples),
+            expand(join(workpath,rseqc_dir,"{name}.inner_distance_freq.txt"),name=samples),
+            expand(join(workpath,rseqc_dir,"{name}.star_rg_added.sorted.dmark.summary.txt"),name=samples),
+            join(workpath,degall_dir,"combined_TIN.tsv"),
+
+            # RSEM merge and counts
+            expand(join(workpath,degall_dir,"{name}.RSEM.genes.results"),name=samples),
+            expand(join(workpath,degall_dir,"{name}.RSEM.isoforms.results"),name=samples),
+            join(workpath,degall_dir,"RSEM.genes.FPKM.all_samples.txt"),
+            join(workpath,degall_dir,"RSEM.isoforms.FPKM.all_samples.txt"),
+            #join(workpath,degall_dir,"RawCountFile_RSEM_genes_filtered.txt"),
+            #join(workpath,star_dir,"sampletable.txt"),
+
+            # PCA Reports
+            #expand(join(workpath,degall_dir,"PcaReport_{dtype}.html"),dtype=dtypes),
+
+            # MultiQC
+            join(workpath,"Reports","multiqc_report.html"),
+
+            # RNA QC Report
+            join(workpath,"Reports","RNA_Report.html"),
+
+            # Differential gene expression analysis report
+            provided([join(workpath,"differential_gene_expression",batch_id,"limma","Limma_DGE_Report.html")], run_de),
+            # DEG results for each comparison
+            expand(
+                join(workpath,"differential_gene_expression",batch_id,"limma","{case}_vs_{control}","limma_voom_deg_{case}_vs_{control}.tsv"),
+                zip, case=case_groups, control=ctrl_groups
+            ),
+
+elif not paired_end:
+    # Single-end Target files
+    rule all:
+        params: batch='--time=168:00:00'
+        input:
+            # FastQValidator
+            expand(join(workpath,"rawQC","{name}.validated.R1.fastq.log"), name=provided(samples, wf_api.use_singularity)),
+
+            # Flowcell Lane information
+            expand(join(workpath,"rawQC","{name}.fastq.info.txt"),name=samples),
+
+            # FastQC (before and after trimming)
+            expand(join(workpath,"rawQC","{name}.R1_fastqc.zip"), name=samples),
+            expand(join(workpath,"QC","{name}.R1.trim_fastqc.zip"), name=samples),
+
+            # FastQ Screen
+            expand(join(workpath,"FQscreen","{name}.R1.trim_screen.txt"),name=samples),
+            expand(join(workpath,"FQscreen","{name}.R1.trim_screen.png"),name=samples),
+            expand(join(workpath,"FQscreen2","{name}.R1.trim_screen.txt"),name=samples),
+            expand(join(workpath,"FQscreen2","{name}.R1.trim_screen.png"),name=samples),
+
+            # Kraken + Krona
+            expand(join(workpath,kraken_dir,"{name}.trim.kraken_bacteria.taxa.txt"),name=samples),
+            expand(join(workpath,kraken_dir,"{name}.trim.kraken_bacteria.krona.html"),name=samples),
+
+            # STAR
+            expand(join(workpath,bams_dir,"{name}.p2.Aligned.toTranscriptome.out.bam"),name=samples),
+
+            # Picard
+            expand(join(workpath,log_dir,"{name}.RnaSeqMetrics.txt"),name=samples),
+
+            # QualiMap
+            expand(join(workpath,"QualiMap","{name}","qualimapReport.html"),name=samples),
+
+            # Bam to stranded bigwigs
+            expand(join(workpath,bams_dir,"{name}.fwd.bw"),name=samples),
+            expand(join(workpath,bams_dir,"{name}.rev.bw"),name=samples),
+
+            # RSeQC
+            expand(join(workpath,rseqc_dir,"{name}.star_rg_added.sorted.dmark.summary.txt"),name=samples),
+            join(workpath,degall_dir,"combined_TIN.tsv"),
+
+            # RSEM
+            expand(join(workpath,degall_dir,"{name}.RSEM.genes.results"),name=samples),
+            expand(join(workpath,degall_dir,"{name}.RSEM.isoforms.results"),name=samples),
+            join(workpath,degall_dir,"RSEM.genes.FPKM.all_samples.txt"),
+            join(workpath,degall_dir,"RSEM.isoforms.FPKM.all_samples.txt"),
+            #join(workpath,degall_dir,"RawCountFile_RSEM_genes_filtered.txt"),
+            #join(workpath,star_dir,"sampletable.txt"),
+
+            # PCA Report
+            #expand(join(workpath,degall_dir,"PcaReport_{dtype}.html"),dtype=dtypes),
+
+            # MultiQC
+            join(workpath,"Reports","multiqc_report.html"),
+
+            # Differential gene expression analysis report
+            provided([join(workpath,"differential_gene_expression",batch_id,"limma","Limma_DGE_Report.html")], run_de),
+            # DEG results for each comparison
+            expand(
+                join(workpath,"differential_gene_expression",batch_id,"limma","{case}_vs_{control}","limma_voom_deg_{case}_vs_{control}.tsv"),
+                zip, case=case_groups, control=ctrl_groups
+            ),
+
+# Rules common to single-end or paired-end data
+include: "rules/common.smk"
+# Post-processing rules to get job information
+include: "rules/hooks.smk"
+# Include single-end and paired-specific rules
+if paired_end:
+    # rules common to paired-end data
+    include: "rules/paired-end.smk"
+elif not paired_end:
+    # rules common to paired-end data
+    include: "rules/single-end.smk"
+# Differential expression rules
+include: "rules/deg.smk"
