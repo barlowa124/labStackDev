@@ -1,0 +1,44 @@
+paths:
+  project_root: "C:/Users/asdf/Downloads/METAFlux-Clean"
+  rnaseq_file: "C:/Users/asdf/Downloads/METAFlux-Clean/TPM_TA_vs_TUA.xlsx"
+  sample_metadata_file: ""
+  human_gem_file: "human_gem.rda"
+  cell_medium_file: "cell_medium.rda"
+  nutrient_lookup_file: "nutrient_lookup_files.rda"
+  data_r: "data.R"
+  calculate_score_r: "calculate_score.R"
+  optimization_r: "optimization.R"
+
+input:
+  sheet_index: 1
+  gene_column: "Genes"
+  min_genes: 5000
+
+model:
+  medium_profile_name: "cell_medium"
+  knockout_genes:
+    - "SLC25A1"
+  nutrients_to_plot:
+    - "glucose"
+    - "glutamine"
+    - "lactate"
+    - "O2"
+    - "CO2"
+    - "pyruvate"
+    - "citrate"
+    - "acetate"
+  reaction_overrides:
+    HMR_9217: "HMR_9286"
+  sensitivity_medium_profiles: []
+
+output:
+  output_dir: ""
+  knockout_suffix: " (ko)"
+  normal_condition_column: "Average TUA"
+  knockout_condition_column: "Average TUA (ko)"
+  nutrient_plot_title: "Nutrient Flux (Normal vs KO)"
+  heatmap_title: "METAFlux Pathway Activity"
+  top_pathways: 40
+  flux_limits:
+    - -0.03
+    - 0.03
