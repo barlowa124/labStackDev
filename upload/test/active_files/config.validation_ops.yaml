@@ -1,0 +1,98 @@
+input:
+  image_dir: "C:/Users/asdf/Documents/cell_image_text_pipeline/subset10"
+  pptx_path: ""
+  recursive: false
+  image_extensions: [".png", ".jpg", ".jpeg", ".tif", ".tiff", ".bmp", ".webp"]
+
+output:
+  root_dir: "C:/Users/asdf/Documents/cell_image_text_pipeline/output_caption_subset_v2_ops"
+  save_per_image_json: true
+  save_markdown_report: true
+  save_csv: true
+  save_jsonl: true
+
+features:
+  min_object_size_px: 30
+  contact_distance_px: 45
+
+captioning:
+  enabled: true
+  model_id: "Salesforce/blip-image-captioning-base"
+  mode: "phase-contrast"
+  batch_size: 1
+  max_new_tokens: 35
+  prompt: "Describe this microscopy image of cultured cells. Focus on confluency, cell shape, and density."
+
+hardware_policy:
+  device_policy: "auto"
+  cpu_model_id: "Salesforce/blip-image-captioning-base"
+  gpu_model_id: "Salesforce/blip-image-captioning-large"
+  batch_size_cpu: 1
+  batch_size_gpu: 2
+
+runtime:
+  resume_enabled: true
+  checkpoint_file: ""
+  retry_attempts: 2
+  retry_backoff_seconds: 1.0
+
+quality:
+  low_quality_threshold: 0.45
+  save_low_quality_csv: true
+  domain_keywords: ["cell", "cells", "confluency", "morphology", "microscopy", "density", "cluster", "phase", "fluorescence", "brightfield"]
+  banned_terms: ["fish", "pond", "frost", "water", "droplets"]
+
+spectral_calibration:
+  enabled: true
+  white_balance_mode: "grayworld"
+  gamma_correction: 1.0
+  color_correction_matrix: []
+  reference_patch_rgb: [0.5, 0.5, 0.5]
+  save_preview: true
+
+density_analysis:
+  enabled: true
+  grid_size: 24
+  save_artifacts: true
+
+text:
+  include_model_caption: true
+  include_feature_summary: true
+
+instrument_bridge:
+  enabled: true
+  poll_seconds: 30
+  recursive: true
+  min_new_images: 1
+  state_file: "C:/Users/asdf/Documents/cell_image_text_pipeline/.instrument_bridge_state.json"
+  staging_root: "C:/Users/asdf/Documents/cell_image_text_pipeline/instrument_ingest"
+  sources: []
+
+google_workspace:
+  enabled: true
+  credentials_file: "C:/Users/asdf/Documents/credentials.json"
+  token_file: "C:/Users/asdf/Documents/token_barlowa124_lab_ops.json"
+  oauth_host: "127.0.0.1"
+  oauth_port: 8765
+  scopes:
+    - "https://www.googleapis.com/auth/drive.readonly"
+    - "https://www.googleapis.com/auth/calendar.events"
+    - "https://www.googleapis.com/auth/gmail.send"
+  drive_folder_id: "1UiveeCJBfVJtSZfr_IsErrZnW5KFJam3"
+  drive_mirror_dir: "C:/Users/asdf/Documents/cell_image_text_pipeline/google_drive_ingest"
+  drive_page_size: 100
+
+google_workspace_routing:
+  account_tokens:
+    barlowa124@gmail.com: "C:/Users/asdf/Documents/token_barlowa124_full3.json"
+    ajbarlo2@ncsu.edu: "C:/Users/asdf/Documents/token_ajbarlo2_full3.json"
+    porkporkpork2@gmail.com: "C:/Users/asdf/Documents/token_porkporkpork2_full3.json"
+  gmail_accounts:
+    - "barlowa124@gmail.com"
+    - "ajbarlo2@ncsu.edu"
+    - "porkporkpork2@gmail.com"
+  drive_accounts:
+    - "barlowa124@gmail.com"
+    - "ajbarlo2@ncsu.edu"
+    - "porkporkpork2@gmail.com"
+  calendar_account: "barlowa124@gmail.com"

@@ -26,18 +26,31 @@ try:
 except Exception:
     go = None
 
-from lab_collab import (
-    add_comment,
-    add_proposal,
-    default_db_path,
-    init_collab_db,
-    list_activity,
-    list_comments,
-    list_proposals,
-    log_edit,
-    log_view,
-    review_proposal,
-)
+try:
+    from lab_collab import (
+        add_comment,
+        add_proposal,
+        default_db_path,
+        init_collab_db,
+        list_activity,
+        list_comments,
+        list_proposals,
+        log_edit,
+        log_view,
+        review_proposal,
+    )
+    HAS_LAB_COLLAB = True
+except ImportError:
+    HAS_LAB_COLLAB = False
+
+    def _noop(*a, **k):
+        pass
+
+    add_comment = add_proposal = init_collab_db = list_activity = list_comments = list_proposals = log_edit = log_view = review_proposal = _noop
+
+    def default_db_path(root: Path) -> Path:
+        return root / "lab_collab.db"
+
 from lab_ops import compute_sample_readiness
 from python_compat import require_supported_python
 
@@ -2208,6 +2221,71 @@ def run_metaflux_from_webapp(root: Path, rscript_exe: str, config_path: Path) ->
     return run_command([rscript_exe, str(script_path), "--config", str(config_path)], cwd=root)
 
 
+def run_metaflux_refactored(root: Path, rscript_exe: str, config_path: Path, rnaseq_override: Path | None = None) -> tuple[dict[str, Any], Path | None]:
+    """Run metaflux_pipeline_refactored.R with YAML config. Returns (result, output_dir or None)."""
+    script_path = root / "metaflux_pipeline_refactored.R"
+    if not script_path.exists():
+        return ({"ok": False, "returncode": 127, "stdout": "", "stderr": f"Pipeline not found: {script_path}"}, None)
+    if not config_path.exists():
+        return ({"ok": False, "returncode": 2, "stdout": "", "stderr": f"Config not found: {config_path}"}, None)
+    cfg = yaml.safe_load(config_path.read_text(encoding="utf-8"))
+    proj = Path(cfg.get("paths", {}).get("project_root", str(Path.home() / "Documents")))
+    out_dir = proj / "runs" / f"webui_{datetime.now().strftime('%Y%m%d_%H%M%S')}"
+    out_dir.mkdir(parents=True, exist_ok=True)
+    cfg = cfg.copy()
+    cfg.setdefault("paths", {})
+    cfg.setdefault("output", {})["output_dir"] = str(out_dir)
+    if rnaseq_override:
+        cfg["paths"]["rnaseq_file"] = str(rnaseq_override)
+    runtime_cfg = root / "_tmp_metaflux_runtime_config.yaml"
+    runtime_cfg.write_text(yaml.dump(cfg, default_flow_style=False, allow_unicode=True), encoding="utf-8")
+    result = run_command([rscript_exe, str(script_path), str(runtime_cfg)], cwd=root)
+    return (result, out_dir if result.get("ok") else None)
+
+
+def _zip_dir(out_dir: Path) -> Any:
+    try:
+        import io as _io
+        import zipfile as _zipfile
+        buf = _io.BytesIO()
+        with _zipfile.ZipFile(buf, "w", _zipfile.ZIP_DEFLATED) as zf:
+            for p in out_dir.rglob("*"):
+                if p.is_file():
+                    zf.write(p, p.relative_to(out_dir))
+        buf.seek(0)
+        return buf
+    except Exception:
+        return None
+
+
+def render_metaflux_results(out_dir: Path) -> None:
+    """Display METAFlux pipeline outputs: heatmap, boxplot, CSVs, metadata, report bundle."""
+    heatmap = out_dir / "pathway_heatmap.png"
+    boxplot = out_dir / "nutrient_flux_boxplot.png"
+    if heatmap.exists():
+        st.image(str(heatmap), caption="Pathway heatmap", use_container_width=True)
+    if boxplot.exists():
+        st.image(str(boxplot), caption="Nutrient flux boxplot", use_container_width=True)
+    csvs = [p for p in out_dir.glob("*.csv")]
+    if csvs:
+        st.subheader("CSV outputs")
+        for p in sorted(csvs):
+            with st.expander(p.name):
+                try:
+                    df = pd.read_csv(p)
+                    st.dataframe(df, use_container_width=True, height=min(300, 50 + len(df) * 25))
+                    st.download_button(f"Download {p.name}", p.read_bytes(), p.name, key=f"metaflux_dl_{p.name}")
+                except Exception as e:
+                    st.text(str(e))
+    meta = out_dir / "run_metadata.json"
+    if meta.exists():
+        with st.expander("Run metadata"):
+            st.json(json.loads(meta.read_text(encoding="utf-8")))
+    buf = _zip_dir(out_dir)
+    if buf:
+        st.download_button("Download full report bundle (ZIP)", buf.getvalue(), f"metaflux_report_{out_dir.name}.zip", key=f"metaflux_bundle_{out_dir.name}")
+
+
 def write_runtime_config(base_config_path: Path, runtime_overrides: dict[str, Any], out_path: Path) -> Path:
     base = yaml.safe_load(base_config_path.read_text(encoding="utf-8"))
     for key, value in runtime_overrides.items():
@@ -2322,6 +2400,9 @@ def render_collaboration_panel(
     use_local_api: bool,
     default_area: str = "lab-ops",
 ) -> None:
+    if not HAS_LAB_COLLAB:
+        st.info("Collaboration tab requires the `lab_collab` module. Install it or run with collaboration disabled.")
+        return
     db_path = default_db_path(root)
     init_collab_db(db_path)
 
@@ -3565,7 +3646,7 @@ def main() -> None:
 
     render_glutamate_reminder()
     render_data_preservation_reminder()
-    daily_tab, drift_tab, weekly_tab, eln_tab, readiness_tab, insights_tab, cellmedia_tab, collab_tab, bug_tab = st.tabs(
+    daily_tab, drift_tab, weekly_tab, eln_tab, readiness_tab, insights_tab, cellmedia_tab, metaflux_tab, collab_tab, bug_tab = st.tabs(
         [
             ui_text(use_lab_language, "Daily QC Run"),
             ui_text(use_lab_language, "Drift & Promotion"),
@@ -3574,6 +3655,7 @@ def main() -> None:
             ui_text(use_lab_language, "Readiness"),
             "Alerts & Trends",
             "Cell/Media Viz",
+            "METAFlux",
             "Collaboration",
             ui_text(use_lab_language, "Bug Reporter"),
         ]
@@ -4239,6 +4321,45 @@ def main() -> None:
             )
             selected_run = next((p for p in run_options if p.name == selected_run_name), run_options[0])
             render_cell_media_visualization(selected_run)
+
+    with metaflux_tab:
+        render_section_glance_image("METAFlux", "🧬", "#2d5a27")
+        st.subheader("METAFlux Pathway & Nutrient Flux Analysis")
+        st.caption("Run the METAFlux R pipeline on RNA-seq data. Requires R with METAFlux, readxl, ggplot2, pheatmap, and related packages.")
+        docs = Path.home() / "Documents"
+        default_metaflux_cfg = root / "metaflux_config.example.yaml"
+        if not default_metaflux_cfg.exists():
+            default_metaflux_cfg = docs / "metaflux_config.example.yaml"
+        default_metaflux_r = root / "metaflux_pipeline_refactored.R"
+        if not default_metaflux_r.exists():
+            default_metaflux_r = docs / "metaflux_pipeline_refactored.R"
+        rscript_exe = st.text_input("Rscript executable", value=default_rscript_exe(), key="metaflux_rscript")
+        config_path_meta = st.text_input("Config YAML path", value=str(default_metaflux_cfg), key="metaflux_cfg")
+        config_upload = st.file_uploader("Or upload config YAML", type=["yaml", "yml"], key="metaflux_cfg_upload")
+        rnaseq_upload = st.file_uploader("Or upload RNA-seq file (Excel)", type=["xlsx", "xls"], key="metaflux_rnaseq_upload")
+        rscript_path = st.text_input("METAFlux R script path", value=str(default_metaflux_r), key="metaflux_r_script")
+        if st.button("Run METAFlux", type="primary", key="metaflux_run"):
+            if config_upload:
+                tmp_cfg = root / "_tmp_metaflux_webui_config.yaml"
+                tmp_cfg.write_bytes(config_upload.getvalue())
+                cfg_path = tmp_cfg
+            else:
+                cfg_path = Path(config_path_meta)
+            rnaseq_override = None
+            if rnaseq_upload:
+                rnaseq_tmp = root / "_tmp_metaflux_webui_rnaseq"
+                rnaseq_tmp.mkdir(parents=True, exist_ok=True)
+                rnaseq_path = rnaseq_tmp / (rnaseq_upload.name or "uploaded_rnaseq.xlsx")
+                rnaseq_path.write_bytes(rnaseq_upload.getvalue())
+                rnaseq_override = rnaseq_path
+            result, out_dir = run_metaflux_refactored(root, rscript_exe, cfg_path, rnaseq_override)
+            show_command_result("METAFlux", result)
+            if result.get("ok") and out_dir and out_dir.exists():
+                st.success(f"Outputs: {out_dir}")
+                render_metaflux_results(out_dir)
+        browse_out = st.text_input("Or browse output folder", key="metaflux_browse", placeholder="e.g. C:/Users/.../runs/20250213_123456")
+        if browse_out and Path(browse_out).exists():
+            render_metaflux_results(Path(browse_out))
 
     with collab_tab:
         render_section_glance_image("Collaboration", "🤝", "#355070")

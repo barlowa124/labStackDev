@@ -1,0 +1,68 @@
+input:
+  image_dir: ""
+  pptx_path: "C:/Users/asdf/Downloads/2-12-26 N201 SFM Updates.pptx"
+  recursive: true
+  image_extensions: [".png", ".jpg", ".jpeg", ".tif", ".tiff", ".bmp", ".webp"]
+
+output:
+  root_dir: "C:/Users/asdf/Documents/cell_image_text_pipeline/output"
+  save_per_image_json: true
+  save_markdown_report: true
+  save_csv: true
+  save_jsonl: true
+
+features:
+  min_object_size_px: 30
+  contact_distance_px: 45
+
+captioning:
+  enabled: true
+  model_id: "auto"
+  mode: "phase-contrast" # phase-contrast | fluorescence | brightfield
+  batch_size: null # null => auto from hardware_policy
+  max_new_tokens: 40
+  prompt: "Describe this microscopy image of cultured cells with morphology and confluency details."
+
+hardware_policy:
+  device_policy: "auto" # auto | cpu | gpu
+  cpu_model_id: "Salesforce/blip-image-captioning-base"
+  gpu_model_id: "Salesforce/blip-image-captioning-large"
+  batch_size_cpu: 1
+  batch_size_gpu: 4
+
+runtime:
+  resume_enabled: true
+  checkpoint_file: "" # blank => output.root_dir/checkpoint.json
+  retry_attempts: 2
+  retry_backoff_seconds: 1.5
+
+quality:
+  low_quality_threshold: 0.45
+  save_low_quality_csv: true
+  domain_keywords: ["cell", "cells", "confluency", "morphology", "microscopy", "density", "cluster", "phase", "fluorescence", "brightfield"]
+  banned_terms: ["fish", "pond", "frost", "water", "droplets"]
+
+text:
+  include_model_caption: true
+  include_feature_summary: true
+
+instrument_bridge:
+  enabled: false
+  poll_seconds: 30
+  recursive: true
+  min_new_images: 1
+  state_file: "C:/Users/asdf/Documents/cell_image_text_pipeline/.instrument_bridge_state.json"
+  staging_root: "C:/Users/asdf/Documents/cell_image_text_pipeline/instrument_ingest"
+  # Add one or more instrument export folders here.
+  # This can also be a Google Drive Desktop synced folder path.
+  sources: []
+
+google_workspace:
+  enabled: false
+  credentials_file: "C:/Users/asdf/Documents/credentials.json"
+  token_file: "C:/Users/asdf/Documents/token.json"
+  scopes:
+    - "https://www.googleapis.com/auth/drive.readonly"
+  drive_folder_id: ""
+  drive_mirror_dir: "C:/Users/asdf/Documents/cell_image_text_pipeline/google_drive_ingest"
+  drive_page_size: 100
