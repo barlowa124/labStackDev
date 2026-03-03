@@ -25,6 +25,9 @@ This pipeline converts microscopy/cell images into AI-friendly text records by c
 - `metaflux_pipeline_refactored.R` - METAFlux R pipeline (pathway heatmap, nutrient boxplot)
 - `metaflux_config.example.yaml` - METAFlux config
 
+## METAFlux (R)
+Requires R with packages: `METAFlux`, `readxl`, `ggplot2`, `pheatmap`, `RColorBrewer`, `jsonlite`, `yaml`, `stringi`, `stringr`, `osqp`. Run from the METAFlux tab in the lab dashboard.
+
 ## Install
 Supported Python versions: **3.10 to 3.14**.
 

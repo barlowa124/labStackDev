@@ -4361,6 +4361,8 @@ def main() -> None:
             default_metaflux_r = docs / "metaflux_pipeline_refactored.R"
         rscript_exe = st.text_input("Rscript executable", value=default_rscript_exe(), key="metaflux_rscript")
         config_path_meta = st.text_input("Config YAML path", value=str(default_metaflux_cfg), key="metaflux_cfg")
+        if config_path_meta.strip():
+            st.caption("✓ Config found" if Path(config_path_meta).exists() else "Config not found")
         config_upload = st.file_uploader("Or upload config YAML", type=["yaml", "yml"], key="metaflux_cfg_upload")
         cfg_path_for_assumptions = Path(config_path_meta)
         if cfg_path_for_assumptions.exists():
@@ -4377,6 +4379,8 @@ def main() -> None:
                 pass
         rnaseq_upload = st.file_uploader("Or upload RNA-seq file (Excel)", type=["xlsx", "xls"], key="metaflux_rnaseq_upload")
         rscript_path = st.text_input("METAFlux R script path", value=str(default_metaflux_r), key="metaflux_r_script")
+        if rscript_path.strip():
+            st.caption("✓ Script found" if Path(rscript_path).exists() else "R script not found")
         if st.button("Run METAFlux", type="primary", key="metaflux_run"):
             if config_upload:
                 tmp_cfg = root / "_tmp_metaflux_webui_config.yaml"
