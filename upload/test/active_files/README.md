@@ -5,11 +5,6 @@ This pipeline converts microscopy/cell images into AI-friendly text records by c
 2. Optional Hugging Face image captioning
 3. Structured outputs (JSONL/CSV/Markdown)
 
-## Lab-first guide
-For a non-programmer, step-by-step daily workflow, see:
-- `LAB_SOP_Daily_Image_QC.md`
-- `Purdue_Method_Integration_Spec.md` (pre-deployment plan to integrate Purdue computational spectrometry ideas)
-
 ## Files
 - `run_pipeline.py` - CLI entrypoint
 - `pipeline.py` - pipeline orchestration
@@ -22,13 +17,13 @@ For a non-programmer, step-by-step daily workflow, see:
 - `generate_weekly_pi_summary.py` - weekly summary for PI/lab manager
 - `export_eln_lims_package.py` - creates ELN/LIMS-ready package + zip
 - `lab_api.py` - local API with sample readiness endpoint
-- `Run_Daily_QC.bat` - one-click daily QC launcher
-- `Run_Weekly_Drift_Check.bat` - one-click weekly drift launcher
-- `Export_ELN_Package.bat` - one-click ELN package export
-- `Run_Lab_WebUI.bat` - one-click web dashboard launcher
-- `Run_Auto_Instrument_Bridge.bat` - auto-watch instrument export folders and trigger QC on new captures
+- `Run_Lab_WebUI.bat` - one-click web dashboard launcher (router + Streamlit, IE fallback for legacy browsers)
 - `lab_webui.py` - Streamlit UI for non-technical lab workflows
+- `lab_webui_router.py` - IE/legacy browser fallback (port 8502)
+- `launch_lab_webui_with_ie_fallback.py` - starts router + Streamlit, opens browser
 - `config.example.yaml` - config template
+- `metaflux_pipeline_refactored.R` - METAFlux R pipeline (pathway heatmap, nutrient boxplot)
+- `metaflux_config.example.yaml` - METAFlux config
 
 ## Install
 Supported Python versions: **3.10 to 3.14**.
@@ -170,6 +165,9 @@ The dashboard opens in your browser and provides tabs for:
 - Weekly PI summary generation
 - ELN/LIMS package export
 - Sample readiness triage preview
+- METAFlux (RNA-seq metabolic flux: pathway heatmap, nutrient boxplot, config/upload)
+- Cell/Media visualizations (3D + density heatmaps)
+- Collaboration (when lab_collab installed)
 
 Default startup is **Streamlined (recommended)** mode:
 - Step 1: Run Daily QC
@@ -181,9 +179,6 @@ This guided path is optimized for first-time/non-technical users under time pres
 ## License and data sharing
 
 - Code license: `Apache-2.0` (see `LICENSE`)
-- Contribution expectations: `CONTRIBUTING.md`
-- Data classification policy: `DATA_CLASSIFICATION.md`
-- Data access/sharing rules: `DATA_ACCESS.md`
 
 Important: this repository is open for code, but data is not automatically open.
 Only commit data that is explicitly approved for public release.

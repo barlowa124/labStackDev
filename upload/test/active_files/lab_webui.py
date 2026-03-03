@@ -2232,13 +2232,15 @@ def run_metaflux_from_webapp(root: Path, rscript_exe: str, config_path: Path) ->
     return run_command([rscript_exe, str(script_path), "--config", str(config_path)], cwd=root)
 
 
-def run_metaflux_refactored(root: Path, rscript_exe: str, config_path: Path, rnaseq_override: Path | None = None) -> tuple[dict[str, Any], Path | None]:
-    """Run metaflux_pipeline_refactored.R with YAML config. Returns (result, output_dir or None)."""
+def _prepare_metaflux_refactored(
+    root: Path, rscript_exe: str, config_path: Path, rnaseq_override: Path | None = None
+) -> tuple[list[str], Path, Path] | None:
+    """Prepare METAFlux refactored run. Returns (cmd, cwd, out_dir) or None on error."""
     script_path = root / "metaflux_pipeline_refactored.R"
     if not script_path.exists():
-        return ({"ok": False, "returncode": 127, "stdout": "", "stderr": f"Pipeline not found: {script_path}"}, None)
+        return None
     if not config_path.exists():
-        return ({"ok": False, "returncode": 2, "stdout": "", "stderr": f"Config not found: {config_path}"}, None)
+        return None
     cfg = yaml.safe_load(config_path.read_text(encoding="utf-8"))
     proj = Path(cfg.get("paths", {}).get("project_root", str(Path.home() / "Documents")))
     out_dir = proj / "runs" / f"webui_{datetime.now().strftime('%Y%m%d_%H%M%S')}"
@@ -2250,7 +2252,20 @@ def run_metaflux_refactored(root: Path, rscript_exe: str, config_path: Path, rna
         cfg["paths"]["rnaseq_file"] = str(rnaseq_override)
     runtime_cfg = root / "_tmp_metaflux_runtime_config.yaml"
     runtime_cfg.write_text(yaml.dump(cfg, default_flow_style=False, allow_unicode=True), encoding="utf-8")
-    result = run_command([rscript_exe, str(script_path), str(runtime_cfg)], cwd=root)
+    cmd = [rscript_exe, str(script_path), str(runtime_cfg)]
+    return (cmd, root, out_dir)
+
+
+def run_metaflux_refactored(root: Path, rscript_exe: str, config_path: Path, rnaseq_override: Path | None = None) -> tuple[dict[str, Any], Path | None]:
+    """Run metaflux_pipeline_refactored.R with YAML config. Returns (result, output_dir or None)."""
+    prep = _prepare_metaflux_refactored(root, rscript_exe, config_path, rnaseq_override)
+    if not prep:
+        script_path = root / "metaflux_pipeline_refactored.R"
+        if not script_path.exists():
+            return ({"ok": False, "returncode": 127, "stdout": "", "stderr": f"Pipeline not found: {script_path}"}, None)
+        return ({"ok": False, "returncode": 2, "stdout": "", "stderr": f"Config not found: {config_path}"}, None)
+    cmd, cwd, out_dir = prep
+    result = run_command(cmd, cwd=cwd)
     return (result, out_dir if result.get("ok") else None)
 
 
@@ -4381,6 +4396,27 @@ def main() -> None:
             if result.get("ok") and out_dir and out_dir.exists():
                 st.success(f"Outputs: {out_dir}")
                 render_metaflux_results(out_dir)
+        if st.button("Run METAFlux (BG)", key="metaflux_run_bg", help="Run METAFlux in background for longer jobs."):
+            if config_upload:
+                tmp_cfg = root / "_tmp_metaflux_webui_config.yaml"
+                tmp_cfg.write_bytes(config_upload.getvalue())
+                cfg_path = tmp_cfg
+            else:
+                cfg_path = Path(config_path_meta)
+            rnaseq_override = None
+            if rnaseq_upload:
+                rnaseq_tmp = root / "_tmp_metaflux_webui_rnaseq"
+                rnaseq_tmp.mkdir(parents=True, exist_ok=True)
+                rnaseq_path = rnaseq_tmp / (rnaseq_upload.name or "uploaded_rnaseq.xlsx")
+                rnaseq_path.write_bytes(rnaseq_upload.getvalue())
+                rnaseq_override = rnaseq_path
+            prep = _prepare_metaflux_refactored(root, rscript_exe, cfg_path, rnaseq_override)
+            if prep:
+                cmd, cwd, out_dir = prep
+                process_id = start_managed_process(name="METAFlux", command=cmd, cwd=cwd)
+                st.success(f"METAFlux running in background. Outputs will be in: {out_dir}")
+            else:
+                st.error("Could not prepare METAFlux run. Check config and script paths.")
         browse_out = st.text_input("Or browse output folder", key="metaflux_browse", placeholder="e.g. C:/Users/.../runs/20250213_123456")
         if browse_out and Path(browse_out).exists():
             render_metaflux_results(Path(browse_out))
