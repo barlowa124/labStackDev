@@ -957,6 +957,11 @@ SECTION_HELP: dict[str, dict[str, str]] = {
         "input": "Run directory with records.csv and density artifact CSVs.",
         "output": "At-a-glance metrics, trend charts, heatmap grids, and wavetable profiles.",
     },
+    "METAFlux": {
+        "goal": "Run metabolic flux analysis from RNA-seq: pathway heatmap and nutrient boxplot.",
+        "input": "RNA-seq matrix (Excel), config YAML (project_root, knockout genes, nutrients, medium).",
+        "output": "pathway_heatmap.png, nutrient_flux_boxplot.png, flux CSVs, run_metadata.json, ZIP bundle.",
+    },
 }
 
 
@@ -1195,7 +1200,13 @@ def render_cell_media_visualization(run_dir: Path) -> None:
     if heatmap_path.exists():
         hdf = pd.read_csv(heatmap_path)
         st.markdown("#### Density heatmap grid")
-        st.dataframe(hdf, width="stretch")
+        numeric_cols = [c for c in hdf.columns if pd.api.types.is_numeric_dtype(hdf[c])]
+        if go and len(numeric_cols) > 0 and len(hdf) > 0:
+            mat = hdf[numeric_cols].values
+            fig = go.Figure(data=go.Heatmap(z=mat, colorscale="Viridis"))
+            fig.update_layout(height=400, margin=dict(l=60, r=20, t=20, b=60))
+            st.plotly_chart(fig, use_container_width=True, key="cell_media_density_heatmap")
+        st.dataframe(hdf, width="stretch", height=min(300, 50 + len(hdf) * 25))
 
     if wavetable_path.exists():
         wdf = pd.read_csv(wavetable_path)
@@ -3608,7 +3619,7 @@ def main() -> None:
         bug_report_dir = root / "bug_reports"
         with st.form("streamlined_bug_report_form"):
             bug_title = st.text_input("Bug title", placeholder="Example: Readiness step does not load latest records")
-            bug_area = st.selectbox("Area", ["Daily QC", "Readiness", "ELN/LIMS Export", "Drift & Promotion", "Weekly PI Summary", "General UI"])
+            bug_area = st.selectbox("Area", ["Daily QC", "Readiness", "ELN/LIMS Export", "Drift & Promotion", "Weekly PI Summary", "METAFlux", "General UI"])
             bug_severity = st.selectbox("Severity", ["Critical", "High", "Medium", "Low"], index=2)
             bug_repro = st.checkbox("Reproducible", value=True)
             bug_expected = st.text_area("Expected behavior", height=90)
@@ -4325,7 +4336,7 @@ def main() -> None:
     with metaflux_tab:
         render_section_glance_image("METAFlux", "🧬", "#2d5a27")
         st.subheader("METAFlux Pathway & Nutrient Flux Analysis")
-        st.caption("Run the METAFlux R pipeline on RNA-seq data. Requires R with METAFlux, readxl, ggplot2, pheatmap, and related packages.")
+        render_section_help("METAFlux")
         docs = Path.home() / "Documents"
         default_metaflux_cfg = root / "metaflux_config.example.yaml"
         if not default_metaflux_cfg.exists():
@@ -4336,6 +4347,19 @@ def main() -> None:
         rscript_exe = st.text_input("Rscript executable", value=default_rscript_exe(), key="metaflux_rscript")
         config_path_meta = st.text_input("Config YAML path", value=str(default_metaflux_cfg), key="metaflux_cfg")
         config_upload = st.file_uploader("Or upload config YAML", type=["yaml", "yml"], key="metaflux_cfg_upload")
+        cfg_path_for_assumptions = Path(config_path_meta)
+        if cfg_path_for_assumptions.exists():
+            try:
+                _acfg = yaml.safe_load(cfg_path_for_assumptions.read_text(encoding="utf-8"))
+                with st.expander("Assumptions (from config)"):
+                    paths = _acfg.get("paths", {})
+                    model = _acfg.get("model", {})
+                    st.write("**Paths:**", paths.get("project_root", "—"), "| RNA-seq:", paths.get("rnaseq_file", "—"))
+                    st.write("**Knockout genes:**", model.get("knockout_genes", []))
+                    st.write("**Nutrients to plot:**", model.get("nutrients_to_plot", []))
+                    st.write("**Medium profile:**", model.get("medium_profile_name", "cell_medium"))
+            except Exception:
+                pass
         rnaseq_upload = st.file_uploader("Or upload RNA-seq file (Excel)", type=["xlsx", "xls"], key="metaflux_rnaseq_upload")
         rscript_path = st.text_input("METAFlux R script path", value=str(default_metaflux_r), key="metaflux_r_script")
         if st.button("Run METAFlux", type="primary", key="metaflux_run"):
@@ -4378,7 +4402,7 @@ def main() -> None:
         bug_report_dir = root / "bug_reports"
         with st.form("custom_bug_report_form"):
             bug_title = st.text_input("Bug title", placeholder="Example: Drift report fails after benchmark run")
-            bug_area = st.selectbox("Area", ["Daily QC", "Readiness", "ELN/LIMS Export", "Drift & Promotion", "Weekly PI Summary", "General UI"], key="bug_area_custom")
+            bug_area = st.selectbox("Area", ["Daily QC", "Readiness", "ELN/LIMS Export", "Drift & Promotion", "Weekly PI Summary", "METAFlux", "General UI"], key="bug_area_custom")
             bug_severity = st.selectbox("Severity", ["Critical", "High", "Medium", "Low"], index=2, key="bug_severity_custom")
             bug_repro = st.checkbox("Reproducible", value=True, key="bug_repro_custom")
             bug_expected = st.text_area("Expected behavior", height=90, key="bug_expected_custom")
