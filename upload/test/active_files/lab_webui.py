@@ -4417,8 +4417,30 @@ def main() -> None:
                 st.success(f"METAFlux running in background. Outputs will be in: {out_dir}")
             else:
                 st.error("Could not prepare METAFlux run. Check config and script paths.")
-        browse_out = st.text_input("Or browse output folder", key="metaflux_browse", placeholder="e.g. C:/Users/.../runs/20250213_123456")
-        if browse_out and Path(browse_out).exists():
+        st.markdown("**View results**")
+        recent_runs: list[Path] = []
+        proj_for_runs = docs
+        if cfg_path_for_assumptions.exists():
+            try:
+                _ac = yaml.safe_load(cfg_path_for_assumptions.read_text(encoding="utf-8"))
+                pr = Path((_ac or {}).get("paths", {}).get("project_root", ""))
+                if pr.exists():
+                    proj_for_runs = pr
+            except Exception:
+                pass
+        for base in [proj_for_runs, root]:
+            runs_dir = base / "runs"
+            if runs_dir.exists():
+                for d in runs_dir.iterdir():
+                    if d.is_dir() and (d / "run_metadata.json").exists():
+                        recent_runs.append(d)
+        recent_runs = sorted(set(recent_runs), key=lambda p: p.stat().st_mtime, reverse=True)[:10]
+        if recent_runs:
+            sel = st.selectbox("Recent run", ["— Select or type path —"] + [str(p) for p in recent_runs], key="metaflux_recent_select")
+            if sel and sel != "— Select or type path —":
+                render_metaflux_results(Path(sel))
+        browse_out = st.text_input("Or type output folder path", key="metaflux_browse", placeholder="e.g. C:/Users/.../runs/webui_20250213_123456")
+        if browse_out.strip() and Path(browse_out).exists():
             render_metaflux_results(Path(browse_out))
 
     with collab_tab:
