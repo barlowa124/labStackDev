@@ -4381,7 +4381,12 @@ def main() -> None:
         rscript_path = st.text_input("METAFlux R script path", value=str(default_metaflux_r), key="metaflux_r_script")
         if rscript_path.strip():
             st.caption("✓ Script found" if Path(rscript_path).exists() else "R script not found")
-        if st.button("Run METAFlux", type="primary", key="metaflux_run"):
+        mf_col1, mf_col2 = st.columns(2)
+        with mf_col1:
+            run_metaflux = st.button("Run METAFlux", type="primary", key="metaflux_run")
+        with mf_col2:
+            run_metaflux_bg = st.button("Run METAFlux (BG)", key="metaflux_run_bg", help="Run in background for longer jobs.")
+        if run_metaflux:
             if config_upload:
                 tmp_cfg = root / "_tmp_metaflux_webui_config.yaml"
                 tmp_cfg.write_bytes(config_upload.getvalue())
@@ -4400,7 +4405,7 @@ def main() -> None:
             if result.get("ok") and out_dir and out_dir.exists():
                 st.success(f"Outputs: {out_dir}")
                 render_metaflux_results(out_dir)
-        if st.button("Run METAFlux (BG)", key="metaflux_run_bg", help="Run METAFlux in background for longer jobs."):
+        if run_metaflux_bg:
             if config_upload:
                 tmp_cfg = root / "_tmp_metaflux_webui_config.yaml"
                 tmp_cfg.write_bytes(config_upload.getvalue())

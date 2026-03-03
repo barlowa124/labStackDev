@@ -17,7 +17,7 @@ This pipeline converts microscopy/cell images into AI-friendly text records by c
 - `generate_weekly_pi_summary.py` - weekly summary for PI/lab manager
 - `export_eln_lims_package.py` - creates ELN/LIMS-ready package + zip
 - `lab_api.py` - local API with sample readiness endpoint
-- `Run_Lab_WebUI.bat` - one-click web dashboard launcher (router + Streamlit, IE fallback for legacy browsers)
+- `Run_Lab_WebUI.bat` - one-click web dashboard launcher (router on 8502, Streamlit on 8503; IE/legacy browsers get a plain HTML fallback)
 - `lab_webui.py` - Streamlit UI for non-technical lab workflows
 - `lab_webui_router.py` - IE/legacy browser fallback (port 8502)
 - `launch_lab_webui_with_ie_fallback.py` - starts router + Streamlit, opens browser
