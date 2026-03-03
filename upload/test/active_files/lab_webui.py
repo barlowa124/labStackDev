@@ -1183,37 +1183,35 @@ def render_cell_media_visualization(run_dir: Path) -> None:
     if trend_cols:
         st.line_chart(df[trend_cols])
 
-    if not density_dir.exists():
+    if density_dir.exists():
+        heatmaps = sorted(density_dir.glob("record_*_heatmap.csv"))
+        if heatmaps:
+            options = [p.stem.replace("_heatmap", "") for p in heatmaps]
+            selected = st.selectbox("Select record for heatmap/wavetable", options, key="cell_media_record_select")
+            heatmap_path = density_dir / f"{selected}_heatmap.csv"
+            wavetable_path = density_dir / f"{selected}_wavetable.csv"
+
+            if heatmap_path.exists():
+                hdf = pd.read_csv(heatmap_path)
+                st.markdown("#### Density heatmap grid")
+                numeric_cols = [c for c in hdf.columns if pd.api.types.is_numeric_dtype(hdf[c])]
+                if go and len(numeric_cols) > 0 and len(hdf) > 0:
+                    mat = hdf[numeric_cols].values
+                    fig = go.Figure(data=go.Heatmap(z=mat, colorscale="Viridis"))
+                    fig.update_layout(height=400, margin=dict(l=60, r=20, t=20, b=60))
+                    st.plotly_chart(fig, use_container_width=True, key="cell_media_density_heatmap")
+                st.dataframe(hdf, width="stretch", height=min(300, 50 + len(hdf) * 25))
+
+            if wavetable_path.exists():
+                wdf = pd.read_csv(wavetable_path)
+                wt_cols = [c for c in ["wavetable_x_density", "wavetable_y_density"] if c in wdf.columns]
+                if wt_cols:
+                    st.markdown("#### Density wavetable profiles")
+                    st.line_chart(wdf[wt_cols])
+        else:
+            st.info("No heatmap CSVs found in density artifact folder.")
+    else:
         st.info("Density map artifacts are not present for this run yet.")
-        return
-
-    heatmaps = sorted(density_dir.glob("record_*_heatmap.csv"))
-    if not heatmaps:
-        st.info("No heatmap CSVs found in density artifact folder.")
-        return
-
-    options = [p.stem.replace("_heatmap", "") for p in heatmaps]
-    selected = st.selectbox("Select record for heatmap/wavetable", options, key="cell_media_record_select")
-    heatmap_path = density_dir / f"{selected}_heatmap.csv"
-    wavetable_path = density_dir / f"{selected}_wavetable.csv"
-
-    if heatmap_path.exists():
-        hdf = pd.read_csv(heatmap_path)
-        st.markdown("#### Density heatmap grid")
-        numeric_cols = [c for c in hdf.columns if pd.api.types.is_numeric_dtype(hdf[c])]
-        if go and len(numeric_cols) > 0 and len(hdf) > 0:
-            mat = hdf[numeric_cols].values
-            fig = go.Figure(data=go.Heatmap(z=mat, colorscale="Viridis"))
-            fig.update_layout(height=400, margin=dict(l=60, r=20, t=20, b=60))
-            st.plotly_chart(fig, use_container_width=True, key="cell_media_density_heatmap")
-        st.dataframe(hdf, width="stretch", height=min(300, 50 + len(hdf) * 25))
-
-    if wavetable_path.exists():
-        wdf = pd.read_csv(wavetable_path)
-        wt_cols = [c for c in ["wavetable_x_density", "wavetable_y_density"] if c in wdf.columns]
-        if wt_cols:
-            st.markdown("#### Density wavetable profiles")
-            st.line_chart(wdf[wt_cols])
 
     render_cell_visualizer_panel(run_dir, df)
 
