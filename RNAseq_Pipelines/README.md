@@ -1,6 +1,6 @@
-# Rao Lab RNA-seq Optimized Pipelines
+# Stem Cell Lab RNA-seq Optimized Pipelines
 
-This repository contains the optimized, benchmarked RNA-seq quantification pipelines developed for the GSE267112 dataset and future Rao Lab Transcriptomics processing.
+This repository contains the optimized, benchmarked RNA-seq quantification pipelines developed for the GSE267112 dataset and future Stem Cell Lab Transcriptomics processing.
 
 ## 1. `run_salmon_ultra.sh`
 **Ultra-Fast Pseudoalignment Pipeline (4 minutes per sample)**
