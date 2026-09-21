@@ -1,0 +1,36 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+.ipynb_checkpoints/
+
+# R
+.Rhistory
+.RData
+.Ruserdata
+*.rds
+*.rda
+
+# Bash / OS
+*.log
+*.tmp
+.DS_Store
+Thumbs.db
+
+# Sequencing data and large artifacts
+*.fastq
+*.fq
+*.fastq.gz
+*.fq.gz
+*.gz
+*.bam
+*.bai
+*.sam
+*.cram
+*.sf
+salmon_index*/
+STAR_Index/
+RSEM_Index/
+*_Index/
