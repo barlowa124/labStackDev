@@ -5,8 +5,23 @@ library(foreach)
 library(Matrix)
 library(osqp)
 
-setwd("C:/Users/asdf/Downloads/METAFlux-Clean")
-sequenceData = "C:/Users/asdf/Downloads/Salmon_TPM_Matrix_Symbols_Ultra.csv"
+# Paths are configurable via environment variables (see README):
+#   LABSTACK_METAFLUX_DIR  directory containing the METAFlux sources
+#                         (data.R, calculate_score.R, optimization.R, *.rda)
+#   LABSTACK_DATA_DIR      directory containing the TPM matrix CSV (default ./data)
+metaflux_dir <- Sys.getenv("LABSTACK_METAFLUX_DIR", "./METAFlux")
+data_dir <- Sys.getenv("LABSTACK_DATA_DIR", "./data")
+if (!dir.exists(metaflux_dir)) {
+    stop(paste0("METAFlux directory '", metaflux_dir,
+                "' does not exist. Set LABSTACK_METAFLUX_DIR."))
+}
+sequenceData <- file.path(data_dir, "Salmon_TPM_Matrix_Symbols_Ultra.csv")
+if (!file.exists(sequenceData)) {
+    stop(paste0("TPM matrix '", sequenceData,
+                "' does not exist. Set LABSTACK_DATA_DIR."))
+}
+
+setwd(metaflux_dir)
 
 source("data.R")
 source("calculate_score.R")

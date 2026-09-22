@@ -1,12 +1,45 @@
 #!/bin/bash
-source /opt/conda/etc/profile.d/conda.sh
-conda activate salmon_env
+set -euo pipefail
 
-cd /mnt/c/Users/asdf/Downloads/GSE267112_FASTQ
+if [ -f /opt/conda/etc/profile.d/conda.sh ]; then
+    source /opt/conda/etc/profile.d/conda.sh
+    conda activate salmon_env
+fi
+
+# Paths are configurable via environment variables (see README):
+#   LABSTACK_DATA_DIR   directory of paired-end *_1/2.fastq.gz files (default ./data)
+#   LABSTACK_INDEX_DIR  index root; Salmon index at <INDEX_DIR>/salmon_index (default ./index)
+#   LABSTACK_OUT_DIR    output root; quants at <OUT_DIR>/Salmon_Quants_Ultra (default ./results)
+#   LABSTACK_THREADS    threads per Salmon job (default: all cores)
+DATA_DIR="${LABSTACK_DATA_DIR:-./data}"
+INDEX_DIR="${LABSTACK_INDEX_DIR:-./index}"
+OUT_DIR="${LABSTACK_OUT_DIR:-./results}"
+
+if [ ! -d "$DATA_DIR" ]; then
+    echo "Error: FASTQ data directory '$DATA_DIR' does not exist." >&2
+    echo "Set LABSTACK_DATA_DIR to a directory containing paired-end *_1.fastq.gz / *_2.fastq.gz files." >&2
+    exit 1
+fi
+
+# Resolve to absolute before cd'ing into the data dir
+if [ -d "$INDEX_DIR" ]; then
+    INDEX_DIR="$(cd "$INDEX_DIR" && pwd)"
+fi
+mkdir -p "$OUT_DIR"
+OUT_DIR="$(cd "$OUT_DIR" && pwd)"
+
+SALMON_INDEX="$INDEX_DIR/salmon_index"
+if [ ! -d "$SALMON_INDEX" ]; then
+    echo "Error: Salmon index '$SALMON_INDEX' does not exist." >&2
+    echo "Set LABSTACK_INDEX_DIR or build the index first." >&2
+    exit 1
+fi
+
+QUANTS_DIR="$OUT_DIR/Salmon_Quants_Ultra"
+
+cd "$DATA_DIR"
 
 TOTAL_CORES=$(nproc)
-SALMON_INDEX="/mnt/c/Users/asdf/Downloads/Reference_Genome/salmon_index"
-QUANTS_DIR="/mnt/c/Users/asdf/Downloads/Salmon_Quants_Ultra"
 
 # Clear previous run
 rm -rf "$QUANTS_DIR"
@@ -18,7 +51,7 @@ cp -r "$SALMON_INDEX" /tmp/salmon_index_ram
 # SEQUENTIAL processing is FASTER on SSDs because it prevents IO thrashing!
 # By giving 1 job ALL the cores, it reads sequentially at max SSD speed.
 CONCURRENT_JOBS=1
-THREADS_PER_JOB=24
+THREADS_PER_JOB="${LABSTACK_THREADS:-$TOTAL_CORES}"
 PIGZ_THREADS=12
 
 echo "Running Ultra-Optimized Salmon (Sequential IO, Max Threads) with $CONCURRENT_JOBS concurrent jobs..."
@@ -27,8 +60,10 @@ start_time=$(date +%s)
 # Create a wrapper script to run salmon with process substitution
 cat << 'EOF' > /tmp/run_single_salmon.sh
 #!/bin/bash
-source /opt/conda/etc/profile.d/conda.sh
-conda activate salmon_env
+if [ -f /opt/conda/etc/profile.d/conda.sh ]; then
+    source /opt/conda/etc/profile.d/conda.sh
+    conda activate salmon_env
+fi
 
 f1="$1"
 f2="$2"

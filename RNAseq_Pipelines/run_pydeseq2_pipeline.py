@@ -1,6 +1,6 @@
-import pandas as pd
-import numpy as np
 import os
+
+import pandas as pd
 from pydeseq2.dds import DeseqDataSet
 from pydeseq2.ds import DeseqStats
 
@@ -20,10 +20,10 @@ for sample_id, row in metadata.iterrows():
     quant_file = os.path.join(quants_dir, srr, "quant.sf")
     df = pd.read_csv(quant_file, sep="\t")
     # Our names might have version numbers, or tx2gene might. Let's ensure match.
-    # In Salmon quant.sf: Name column. 
-    # Let's try direct merge. 
+    # In Salmon quant.sf: Name column.
+    # Let's try direct merge.
     df_merged = pd.merge(df, tx2gene, left_on="Name", right_on="Transcript", how="inner")
-    
+
     # Sum NumReads
     gene_counts = df_merged.groupby("Gene")["NumReads"].sum().round().astype(int)
     counts[sample_id] = gene_counts

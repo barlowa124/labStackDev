@@ -42,15 +42,27 @@ These figures are from the author's hardware and dataset; timings will vary else
 
 ## Usage
 
+All paths are configured through environment variables (with repo-relative
+defaults); a script exits with a clear message if a required input directory
+does not exist:
+
+| Variable | Default | Meaning |
+|---|---|---|
+| `LABSTACK_DATA_DIR` | `./data` | Input data: FASTQ directory (shell pipelines), reference FASTA/GTF directory (`build_index_adaptive.sh`), or TPM matrix directory (`run_metaflux_optimized.R`) |
+| `LABSTACK_INDEX_DIR` | `./index` | Reference index root (`star_index/`, `salmon_index/`, transcriptome FASTA, generated STAR/RSEM indexes) |
+| `LABSTACK_OUT_DIR` | `./results` | Output root for quantifications |
+| `LABSTACK_THREADS` | all cores | Threads per STAR/Salmon job |
+| `LABSTACK_METAFLUX_DIR` | `./METAFlux` | METAFlux source directory (R pipeline only) |
+
 ```bash
 # Build reference indexes (adapts to available RAM)
-bash RNAseq_Pipelines/build_index_adaptive.sh
+LABSTACK_DATA_DIR=/path/to/reference bash RNAseq_Pipelines/build_index_adaptive.sh
 
 # Direct pseudoalignment (~4 min/sample)
-bash RNAseq_Pipelines/run_salmon_pseudoalignment.sh
+LABSTACK_DATA_DIR=/path/to/fastq bash RNAseq_Pipelines/run_salmon_pseudoalignment.sh
 
 # Hybrid STAR + Salmon alignment (~20 min/sample)
-bash RNAseq_Pipelines/run_hybrid_salmon.sh
+LABSTACK_DATA_DIR=/path/to/fastq bash RNAseq_Pipelines/run_hybrid_salmon.sh
 
 # Differential expression
 python RNAseq_Pipelines/run_pydeseq2_pipeline.py
@@ -62,14 +74,10 @@ Rscript RNAseq_Pipelines/run_metaflux_optimized.R
 python RNAseq_Pipelines/compare_ryan_salmon.py
 ```
 
-Note: the scripts contain lab-specific paths (`/mnt/c/Users/...`, `C:/Users/...`) that must
-be edited to match your environment before running.
-
 ## Limitations
 
-- Tuned for one lab's hardware (24 threads, tmpfs/RAM-disk); thread counts and paths are hard-coded.
-- No automated tests.
-- Validated on a single dataset (GSE267112).
+- Tuned for one lab's hardware (tmpfs/RAM-disk staging, high thread counts).
+- Tested on a single dataset (GSE267112).
 
 ## License
 
