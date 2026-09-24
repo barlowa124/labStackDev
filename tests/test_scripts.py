@@ -48,7 +48,7 @@ def test_r_syntax(script):
 @pytest.mark.parametrize("script", SH_FILES, ids=[p.name for p in SH_FILES])
 def test_shell_fails_cleanly_on_missing_data_dir(script, tmp_path):
     """Each script must exit non-zero with a clear message when the data
-    directory does not exist, rather than running against garbage paths."""
+    directory does not exist, instead of running against garbage paths."""
     if bash is None:
         pytest.skip("bash not available")
     env = dict(os.environ)

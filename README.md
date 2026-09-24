@@ -16,7 +16,7 @@ one workstation, and the workflow could not be version-controlled or tested.
 These pipelines re-implement the quantification path in scriptable form
 (Salmon, STAR+Salmon, pyDESeq2, METAFlux), keep the original outputs as a
 regression baseline, and add the hardware-aware scheduling needed to run them
-on the machines actually available.
+on the machines the lab has.
 
 ## Validation
 
@@ -54,7 +54,7 @@ All pipelines live in [`RNAseq_Pipelines/`](RNAseq_Pipelines/).
   tmpfs mount before quantification and reads are decompressed in memory via
   `pigz`. On the lab's hardware the bottleneck was SSD I/O contention, not
   CPU, so the pseudoalignment pipeline runs *one* 24-thread job instead of
-  parallel jobs, which is faster in wall-clock terms precisely because it
+  parallel jobs, which is faster in wall-clock terms because it
   avoids thrashing the disk.
 - **Adaptive index building.** `build_index_adaptive.sh` checks available RAM
   and falls back to a sparse STAR index under 32 GB instead of failing with
