@@ -1,12 +1,21 @@
 import os
+import sys
 
 import pandas as pd
 from pydeseq2.dds import DeseqDataSet
 from pydeseq2.ds import DeseqStats
 
-meta_path = r"C:\Users\asdf\Documents\GEO_Submission_Metadata.csv"
-tx2gene_path = r"C:\Users\asdf\Downloads\Reference_Genome\salmon_tx2gene.csv"
-quants_dir = r"C:\Users\asdf\Downloads\Salmon_Quants_Ultra"
+# Paths are configurable via environment variables (see README):
+#   LABSTACK_METADATA    sample metadata CSV with Sample_ID, SRR_Accession, Condition
+#   LABSTACK_TX2GENE     transcript-to-gene mapping CSV (Transcript, Gene columns)
+#   LABSTACK_QUANTS_DIR  directory of per-SRR Salmon quant.sf dirs
+meta_path = os.environ.get("LABSTACK_METADATA", "./GEO_Submission_Metadata.csv")
+tx2gene_path = os.environ.get("LABSTACK_TX2GENE", "./salmon_tx2gene.csv")
+quants_dir = os.environ.get("LABSTACK_QUANTS_DIR", "./results/Salmon_Quants_Ultra")
+
+for p in (meta_path, tx2gene_path, quants_dir):
+    if not os.path.exists(p):
+        sys.exit(f"Error: '{p}' does not exist. Set the corresponding LABSTACK_* variable.")
 
 metadata = pd.read_csv(meta_path)
 metadata.set_index("Sample_ID", inplace=True)

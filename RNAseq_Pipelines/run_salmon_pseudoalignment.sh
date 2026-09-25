@@ -48,6 +48,9 @@ mkdir -p "$QUANTS_DIR"
 echo "Copying Salmon Index to RAM-Disk (/tmp) for maximum read speed..."
 cp -r "$SALMON_INDEX" /tmp/salmon_index_ram
 
+# Clean up the RAM copy and helper script even on failure
+trap 'rm -rf /tmp/salmon_index_ram /tmp/run_single_salmon.sh' EXIT
+
 # SEQUENTIAL processing is FASTER on SSDs because it prevents IO thrashing!
 # By giving 1 job ALL the cores, it reads sequentially at max SSD speed.
 CONCURRENT_JOBS=1

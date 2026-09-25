@@ -55,6 +55,13 @@ mkdir -p "$QUANTS_DIR"
 echo "Loading STAR genome into RAM to allow instant multi-job access..."
 STAR --genomeLoad LoadAndExit --genomeDir "$STAR_INDEX"
 
+# Always unload the genome and clean up helpers, even if a job fails
+cleanup() {
+    STAR --genomeLoad Remove --genomeDir "$STAR_INDEX" 2>/dev/null || true
+    rm -f /tmp/run_hybrid_single.sh
+}
+trap cleanup EXIT
+
 # 32 Cores: 4 concurrent jobs.
 CONCURRENT_JOBS=4
 STAR_THREADS="${LABSTACK_THREADS:-4}"
@@ -137,9 +144,9 @@ find "$(pwd)" -maxdepth 1 -name "*_1.fastq.gz" | while read f1; do
     echo "$f1 $f2 $base $STAR_INDEX $TRANSCRIPTOME_FA $QUANTS_DIR $STAR_THREADS $SALMON_THREADS"
 done | xargs -n 8 -P "$CONCURRENT_JOBS" bash /tmp/run_hybrid_single.sh
 
-# Unload the genome from RAM
+# Unload the genome from RAM (also runs via the EXIT trap on failure)
 echo "Unloading genome from RAM..."
-STAR --genomeLoad Remove --genomeDir "$STAR_INDEX"
+STAR --genomeLoad Remove --genomeDir "$STAR_INDEX" || true
 
 end_time=$(date +%s)
 duration=$((end_time - start_time))

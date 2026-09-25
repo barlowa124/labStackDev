@@ -41,7 +41,7 @@ All pipelines live in [`RNAseq_Pipelines/`](RNAseq_Pipelines/).
 
 | Script | Purpose | Inputs | Outputs |
 |---|---|---|---|
-| `build_index_adaptive.sh` | Builds STAR and RSEM reference indexes; detects available RAM and uses a sparse STAR index (`--genomeSAsparseD 2`) when under 32 GB to avoid OOM | GRCh38 genome FASTA + GENCODE v45 GTF | STAR index, RSEM index |
+| `build_index_adaptive.sh` | Builds STAR, RSEM, and Salmon reference indexes; detects available RAM and uses a sparse STAR index (`--genomeSAsparseD 2`) when under 32 GB to avoid OOM | GRCh38 genome FASTA + GENCODE v45 GTF + `gencode.v45.transcripts.fa` | STAR index (`star_index/`), RSEM index, Salmon index (`salmon_index/`) |
 | `run_salmon_pseudoalignment.sh` | Direct Salmon pseudoalignment; copies the Salmon index to a RAM disk, decompresses reads in memory with `pigz`, and runs one sequential job with 24 threads to avoid SSD I/O thrashing | Paired-end `*_1/2.fastq.gz`, Salmon index | `quant.sf` per sample in `Salmon_Quants_Ultra/` |
 | `run_hybrid_salmon.sh` | Hybrid STAR+Salmon pipeline; STAR physically aligns reads and emits a transcriptome BAM, which is quantified by Salmon; genome is preloaded into RAM (`--genomeLoad LoadAndExit`) and 4 jobs run concurrently | Paired-end `*_1/2.fastq.gz`, STAR index, transcriptome FASTA | `quant.sf` per sample in `Salmon_Quants_Hybrid/` |
 | `run_pydeseq2_pipeline.py` | Aggregates Salmon `quant.sf` files into a gene counts matrix (via tx2gene mapping) and runs pyDESeq2 differential expression | Sample metadata CSV, tx2gene CSV, Salmon quants | Counts matrix, DESeq2 normalized counts, pairwise contrast CSV |
@@ -91,6 +91,9 @@ does not exist:
 | `LABSTACK_OUT_DIR` | `./results` | Output root for quantifications |
 | `LABSTACK_THREADS` | all cores | Threads per STAR/Salmon job |
 | `LABSTACK_METAFLUX_DIR` | `./METAFlux` | METAFlux source directory (R pipeline only) |
+| `LABSTACK_METADATA` | `./GEO_Submission_Metadata.csv` | Sample metadata CSV (pyDESeq2 pipeline only) |
+| `LABSTACK_TX2GENE` | `./salmon_tx2gene.csv` | Transcript-to-gene map (pyDESeq2 pipeline only) |
+| `LABSTACK_QUANTS_DIR` | `./results/Salmon_Quants_Ultra` | Per-SRR `quant.sf` directory (pyDESeq2 and comparison scripts) |
 
 ```bash
 # Build reference indexes (adapts to available RAM)

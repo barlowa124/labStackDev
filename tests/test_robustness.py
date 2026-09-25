@@ -9,6 +9,7 @@ from pathlib import Path
 import pytest
 
 pd = pytest.importorskip("pandas", reason="comparison script needs pandas")
+pytest.importorskip("scipy", reason="comparison script needs scipy.stats")
 
 SCRIPT = (Path(__file__).resolve().parent.parent
           / "RNAseq_Pipelines" / "compare_ryan_salmon.py")
