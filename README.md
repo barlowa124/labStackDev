@@ -121,7 +121,8 @@ python RNAseq_Pipelines/compare_ryan_salmon.py
   On different storage topologies the parallelization choices may invert.
 - Validated on a single dataset (GSE267112). The r = 0.984 concordance is
   evidence the pipeline reproduces the CLC baseline, not that either is
-  biologically correct.
+  biologically correct. The per-sample correlation table is not committed:
+  it compares against the lab's CLC exports, which are not public data.
 - RNA-seq quantification and DE for research use. Not validated for clinical
   or diagnostic purposes.
 
