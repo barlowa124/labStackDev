@@ -122,8 +122,11 @@ python RNAseq_Pipelines/compare_ryan_salmon.py
 sample registration, experiment status transitions, plate-well assignment,
 and result tracking by content hash. The differentiating piece is the
 audit log: every mutation appends a row whose SHA-256 covers the row
-content plus the previous audit hash, so editing or deleting history rows
-breaks `verify_audit_chain()` (tested, including a mid-chain deletion).
+content plus the previous audit hash. Structural verification detects edited
+rows and broken interior links. Detecting tail or whole-log truncation requires
+a separately retained `audit_checkpoint()`, supplied to `verify_audit_chain()`
+as `expected_head` and `expected_rows`. Keep that checkpoint independently of
+the database.
 Experiment status is a forward-only state machine
 (`registered → queued → assigned → processed → analyzed → locked`);
 locked experiments refuse further mutation.

@@ -13,6 +13,7 @@ import hashlib
 import json
 import sqlite3
 import time
+from contextlib import contextmanager
 
 SCHEMA = """
 CREATE TABLE IF NOT EXISTS samples (
@@ -96,7 +97,7 @@ class Registry:
             (ts, entity, entity_id, action, detail, prev_hash, h))
         return h
 
-    def verify_audit_chain(self) -> dict:
+    def verify_audit_chain(self, expected_head=None, expected_rows=None) -> dict:
         """Recompute the hash chain. Tamper-evident: any edited or
         reordered row breaks linkage from that point on."""
         rows = self.db.execute(
@@ -110,27 +111,50 @@ class Registry:
                 return {"ok": False, "rows": len(rows),
                         "first_bad_seq": row["seq"]}
             prev_hash = h
+        if expected_head is not None and prev_hash != expected_head:
+            return {'ok': False, 'rows': len(rows), 'reason': 'head_mismatch'}
+        if expected_rows is not None and len(rows) != expected_rows:
+            return {'ok': False, 'rows': len(rows), 'reason': 'row_count_mismatch'}
         return {"ok": True, "rows": len(rows)}
+
+    def audit_checkpoint(self):
+        row = self.db.execute(
+            'SELECT COUNT(*) AS rows, '
+            '(SELECT hash FROM audit_log ORDER BY seq DESC LIMIT 1) AS head '
+            'FROM audit_log').fetchone()
+        return {'rows': row['rows'], 'head': row['head'] or GENESIS_HASH}
 
     # ── registry ─────────────────────────────────────────────────────
 
+    @contextmanager
+    def _transaction(self):
+        if self.db.in_transaction:
+            raise LimsError('registry mutation requires no active transaction')
+        self.db.execute('BEGIN IMMEDIATE')
+        try:
+            yield
+            self.db.commit()
+        except BaseException:
+            self.db.rollback()
+            raise
+
     def register_sample(self, sample_id, kind, meta=None):
-        self.db.execute(
-            "INSERT INTO samples (sample_id, kind, meta, created)"
-            " VALUES (?,?,?,?)",
-            (sample_id, kind, json.dumps(meta or {}), time.time()))
-        self._audit("sample", sample_id, "register", {"kind": kind})
-        self.db.commit()
+        with self._transaction():
+            self.db.execute(
+                "INSERT INTO samples (sample_id, kind, meta, created)"
+                " VALUES (?,?,?,?)",
+                (sample_id, kind, json.dumps(meta or {}), time.time()))
+            self._audit("sample", sample_id, "register", {"kind": kind})
         return sample_id
 
     def create_experiment(self, experiment_id, name, meta=None):
-        self.db.execute(
-            "INSERT INTO experiments (experiment_id, name, meta, created)"
-            " VALUES (?,?,?,?)",
-            (experiment_id, name, json.dumps(meta or {}), time.time()))
-        self._audit("experiment", experiment_id, "create",
-                    {"name": name})
-        self.db.commit()
+        with self._transaction():
+            self.db.execute(
+                "INSERT INTO experiments (experiment_id, name, meta, created)"
+                " VALUES (?,?,?,?)",
+                (experiment_id, name, json.dumps(meta or {}), time.time()))
+            self._audit("experiment", experiment_id, "create",
+                        {"name": name})
         return experiment_id
 
     def _status(self, experiment_id):
@@ -146,50 +170,50 @@ class Registry:
             raise LimsError(f"{experiment_id} is locked, mutations refused")
 
     def transition(self, experiment_id, to):
-        cur = self._status(experiment_id)
-        if _ALLOWED.get(cur) != to:
-            raise LimsError(f"illegal transition {cur} -> {to}")
-        self.db.execute(
-            "UPDATE experiments SET status=? WHERE experiment_id=?",
-            (to, experiment_id))
-        self._audit("experiment", experiment_id, "transition",
-                    {"from": cur, "to": to})
-        self.db.commit()
+        with self._transaction():
+            cur = self._status(experiment_id)
+            if _ALLOWED.get(cur) != to:
+                raise LimsError(f"illegal transition {cur} -> {to}")
+            self.db.execute(
+                "UPDATE experiments SET status=? WHERE experiment_id=?",
+                (to, experiment_id))
+            self._audit("experiment", experiment_id, "transition",
+                        {"from": cur, "to": to})
         return to
 
     def assign_well(self, experiment_id, plate, well, sample_id):
-        self._require_unlocked(experiment_id)
-        if not self.db.execute(
-                "SELECT 1 FROM samples WHERE sample_id=?",
-                (sample_id,)).fetchone():
-            raise LimsError(f"unknown sample {sample_id}")
-        if self.db.execute(
-                "SELECT 1 FROM plates WHERE experiment_id=? AND plate=?"
-                " AND well=?",
-                (experiment_id, plate, well)).fetchone():
-            raise LimsError(f"{plate}:{well} already occupied")
-        self.db.execute(
-            "INSERT INTO plates VALUES (?,?,?,?)",
-            (experiment_id, plate, well, sample_id))
-        self._audit("plate", f"{experiment_id}:{plate}:{well}",
-                    "assign", {"sample_id": sample_id})
-        self.db.commit()
+        with self._transaction():
+            self._require_unlocked(experiment_id)
+            if not self.db.execute(
+                    "SELECT 1 FROM samples WHERE sample_id=?",
+                    (sample_id,)).fetchone():
+                raise LimsError(f"unknown sample {sample_id}")
+            if self.db.execute(
+                    "SELECT 1 FROM plates WHERE experiment_id=? AND plate=?"
+                    " AND well=?",
+                    (experiment_id, plate, well)).fetchone():
+                raise LimsError(f"{plate}:{well} already occupied")
+            self.db.execute(
+                "INSERT INTO plates VALUES (?,?,?,?)",
+                (experiment_id, plate, well, sample_id))
+            self._audit("plate", f"{experiment_id}:{plate}:{well}",
+                        "assign", {"sample_id": sample_id})
 
     def attach_result(self, experiment_id, name, content: bytes,
                       meta=None):
         """Record a result artifact by content hash. The file itself
         stays wherever it lives. The registry tracks identity."""
-        self._require_unlocked(experiment_id)
-        sha = hashlib.sha256(content).hexdigest()
-        cur = self.db.execute(
-            "INSERT INTO results (experiment_id, name, content_sha256,"
-            " meta, created) VALUES (?,?,?,?,?)",
-            (experiment_id, name, sha, json.dumps(meta or {}),
-             time.time()))
-        self._audit("result", f"{experiment_id}:{name}", "attach",
-                    {"sha256": sha})
-        self.db.commit()
-        return cur.lastrowid
+        with self._transaction():
+            self._require_unlocked(experiment_id)
+            sha = hashlib.sha256(content).hexdigest()
+            cur = self.db.execute(
+                "INSERT INTO results (experiment_id, name, content_sha256,"
+                " meta, created) VALUES (?,?,?,?,?)",
+                (experiment_id, name, sha, json.dumps(meta or {}),
+                 time.time()))
+            self._audit("result", f"{experiment_id}:{name}", "attach",
+                        {"sha256": sha})
+            return cur.lastrowid
 
     def plate_map(self, experiment_id, plate):
         return {r["well"]: r["sample_id"] for r in self.db.execute(
