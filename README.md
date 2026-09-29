@@ -1,3 +1,7 @@
+> **This repository has moved.** Active development continues in [barlowa124/lab-informatics](https://github.com/barlowa124/lab-informatics) under [`labStackDev/`](https://github.com/barlowa124/lab-informatics/tree/main/labStackDev). This repo is archived and kept for link stability.
+
+---
+
 # labStackDev - RNA-seq quantification pipelines for a stem cell lab
 
 These RNA-seq pipelines replaced a lab's CLC Genomics Workbench workflow. They were compared with the original outputs before adoption, with Pearson r = 0.984 on the lab's dataset.
